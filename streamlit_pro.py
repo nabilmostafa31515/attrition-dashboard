@@ -744,7 +744,7 @@ else:
             <div class="chart-title-row">
                 <div>
                     <span class="chart-number">CHART {k} / 19</span>
-                    <h3 class="chart-name" style="margin-top:8px; color:#FFFFFF !important;">{name}</h3>
+                    <h3 style="margin-top:8px; font-family:'Cairo',sans-serif; font-size:1.25rem; font-weight:700; color:#FFFFFF; margin-bottom:0;">{name}</h3>
                 </div>
             </div>
         """, unsafe_allow_html=True)
