@@ -323,7 +323,7 @@ def chart3(df):
         mode="lines+markers",line=dict(color=C["line"],width=2.5),marker=dict(size=9, color=C["line"])))
     fig.update_layout(**layout("Attrition by Age Group","How attrition shifts across age brackets"),barmode="group",
         yaxis2=dict(overlaying="y",side="right",range=[0,100],showgrid=False,title="Rate (%)",
-                    tickfont=dict(color="#FFB300"), titlefont=dict(color="#FFB300")))
+                    tickfont=dict(color="#FFB300"), title_font=dict(color="#FFB300")))
     fig.update_xaxes(**ax(title_text="Age group")); fig.update_yaxes(**ax(title_text="Headcount"))
     show(fig)
 
@@ -331,7 +331,7 @@ def chart4(df):
     pct=df.groupby("Job Role")["Attrition"].apply(lambda x:(x=="Left").mean()*100).sort_values()
     fig=go.Figure(go.Bar(x=pct.values,y=pct.index,orientation="h",
         marker=dict(color=pct.values,colorscale=BLUE_SEQ,showscale=True,
-                    colorbar=dict(title="Rate %", tickfont=dict(color="#90A4AE"), titlefont=dict(color="#90CAF9"))),
+                    colorbar=dict(title="Rate %", tickfont=dict(color="#90A4AE"), title_font=dict(color="#90CAF9"))),
         text=[f"{v:.1f}%" for v in pct.values],textposition="outside",textfont=dict(color="#90CAF9")))
     fig.update_layout(**layout("Attrition by Job Role","Which roles have highest turnover?",420))
     fig.update_xaxes(**ax(title_text="Attrition rate (%)"))
@@ -403,7 +403,7 @@ def chart9(df):
     labels=["Age","Years","Income","Promotions","Distance","Dependents","Tenure","Attrition"]
     fig=go.Figure(go.Heatmap(z=corr.values,x=labels,y=labels,colorscale=DIVERGING,zmin=-1,zmax=1,
         text=corr.round(2).values,texttemplate="%{text:.2f}",textfont=dict(size=10,color="#E8EAF6"),
-        colorbar=dict(title="r", tickfont=dict(color="#90A4AE"), titlefont=dict(color="#90CAF9"))))
+        colorbar=dict(title="r", tickfont=dict(color="#90A4AE"), title_font=dict(color="#90CAF9"))))
     fig.update_layout(**layout("Correlation Heatmap","Which variables correlate with attrition?",500))
     show(fig)
 
@@ -420,7 +420,7 @@ def chart10(df):
         mode="lines+markers",line=dict(color=C["line"],width=2.5),marker=dict(size=8,color=C["line"])))
     fig.update_layout(**layout("Attrition by Tenure","Early employees have higher turnover"),barmode="stack",
         yaxis2=dict(overlaying="y",side="right",range=[0,100],showgrid=False,title="Rate (%)",
-                    tickfont=dict(color="#FFB300"), titlefont=dict(color="#FFB300")))
+                    tickfont=dict(color="#FFB300"), title_font=dict(color="#FFB300")))
     fig.update_xaxes(**ax(title_text="Years")); fig.update_yaxes(**ax(title_text="Headcount"))
     show(fig)
 
@@ -448,7 +448,7 @@ def chart13(df):
     pivot=df.groupby(["Performance Rating","Job Satisfaction"])["Attrition"].apply(lambda x:(x=="Left").mean()*100).unstack()
     fig=go.Figure(go.Heatmap(z=pivot.values,x=pivot.columns,y=pivot.index,colorscale=BLUE_SEQ,
         text=pivot.round(1).values,texttemplate="%{text:.1f}%",textfont=dict(size=11,color="#E8EAF6"),
-        colorbar=dict(title="Rate %",tickfont=dict(color="#90A4AE"),titlefont=dict(color="#90CAF9"))))
+        colorbar=dict(title="Rate %",tickfont=dict(color="#90A4AE"),title_font=dict(color="#90CAF9"))))
     fig.update_layout(**layout("Performance x Satisfaction","Interaction effects on attrition",420))
     show(fig)
 
@@ -503,7 +503,7 @@ def chart17(df):
     count = df["Company Reputation"].value_counts().reindex(order)
     fig = go.Figure(go.Bar(x=pct.values,y=pct.index,orientation="h",
         marker=dict(color=pct.values,colorscale=DIVERGING,cmin=35,cmax=60,showscale=True,
-                    colorbar=dict(title="Rate %",tickfont=dict(color="#90A4AE"),titlefont=dict(color="#90CAF9"))),
+                    colorbar=dict(title="Rate %",tickfont=dict(color="#90A4AE"),title_font=dict(color="#90CAF9"))),
         text=[f"{v:.1f}%" for v in pct.values],textposition="outside",textfont=dict(color="#90CAF9")))
     for rep,p in zip(pct.index,pct.values):
         fig.add_annotation(x=p+2,y=rep,text=f"n={count[rep]:,}",
@@ -521,7 +521,7 @@ def chart18(df):
     fig = go.Figure()
     fig.add_trace(go.Bar(x=pct.index,y=pct.values,
         marker=dict(color=pct.values,colorscale=BLUE_SEQ,showscale=True,
-                    colorbar=dict(title="Rate %",tickfont=dict(color="#90A4AE"),titlefont=dict(color="#90CAF9"))),
+                    colorbar=dict(title="Rate %",tickfont=dict(color="#90A4AE"),title_font=dict(color="#90CAF9"))),
         text=[f"{v:.1f}%" for v in pct.values],textposition="outside",
         textfont=dict(color="#90CAF9"),name="Attrition Rate"))
     fig.add_trace(go.Scatter(x=order,y=count.values,yaxis="y2",mode="lines+markers",
@@ -531,7 +531,7 @@ def chart18(df):
                  "Recognition level has minimal impact — only 1.8% difference across all levels",480),
         yaxis=dict(**ax(title_text="Attrition Rate (%)",range=[0,60])),
         yaxis2=dict(overlaying="y",side="right",showgrid=False,title="Employee Count",
-                    tickfont=dict(color="#FFB300"),titlefont=dict(color="#FFB300")))
+                    tickfont=dict(color="#FFB300"),title_font=dict(color="#FFB300")))
     show(fig)
 
 def chart19(df):
@@ -552,13 +552,13 @@ def chart19(df):
     fig.add_trace(go.Heatmap(z=pivot.values,x=pivot.columns.tolist(),y=order_jl,
         colorscale=BLUE_SEQ,text=pivot.round(1).values,texttemplate="%{text:.1f}%",
         textfont=dict(size=13,color="#E8EAF6"),
-        colorbar=dict(title="Rate %",x=1.02,tickfont=dict(color="#90A4AE"),titlefont=dict(color="#90CAF9")),
+        colorbar=dict(title="Rate %",x=1.02,tickfont=dict(color="#90A4AE"),title_font=dict(color="#90CAF9")),
         showscale=True),row=1,col=2)
     fig.update_layout(**layout("Job Level Impact on Attrition",
                  "Entry-level employees leave at 63.3% — Senior at only 20.3%",500),
         barmode="group",
         yaxis2=dict(overlaying="y",side="right",range=[0,100],showgrid=False,title="Rate (%)",
-                    tickfont=dict(color="#FFB300"),titlefont=dict(color="#FFB300")))
+                    tickfont=dict(color="#FFB300"),title_font=dict(color="#FFB300")))
     fig.update_xaxes(title_text="Job Level",row=1,col=1)
     fig.update_yaxes(title_text="Headcount",row=1,col=1)
     fig.update_xaxes(title_text="Remote Work",row=1,col=2)
@@ -750,4 +750,3 @@ else:
             </div>
         </div>
         """, unsafe_allow_html=True)
-
