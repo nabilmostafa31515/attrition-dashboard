@@ -2,6 +2,8 @@
 Employee Attrition Intelligence Dashboard — Kayfa Executive HR Analytics (v3)
 Premium Executive BI Platform · Question-based Navigation · Insight Cards
 """
+import base64
+import os
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -22,7 +24,14 @@ st.markdown("""
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
 
 html, body, [class*="css"] { font-family: 'IBM Plex Sans', sans-serif; }
-#MainMenu, footer, header { visibility: hidden; }
+#MainMenu, footer { visibility: hidden; }
+/* Keep the header transparent but DO NOT hide it — hiding it also hides the
+   sidebar expand/collapse arrow, leaving no way to reopen a closed sidebar. */
+header[data-testid="stHeader"] { background: transparent !important; }
+/* Always allow re-opening a collapsed sidebar */
+[data-testid="stSidebarCollapsedControl"],
+[data-testid="collapsedControl"] { visibility: visible !important; display: flex !important; }
+section[data-testid="stSidebar"] { visibility: visible !important; }
 
 .stApp {
     background: linear-gradient(135deg, #0A1430 0%, #14224A 50%, #0B1A38 100%);
@@ -54,6 +63,16 @@ section[data-testid="stSidebar"] [data-testid="stFileUploader"] {
     line-height: 1;
     text-shadow: 0 0 40px rgba(33,150,243,0.55);
     margin-bottom: 6px;
+}
+/* Real logo image / built-in SVG emblem (sidebar) */
+.kayfa-sidebar-logo img.logo-mark,
+.kayfa-sidebar-logo svg.logo-mark {
+    width: 130px;
+    max-width: 70%;
+    height: auto;
+    display: block;
+    margin: 0 auto 10px auto;
+    filter: drop-shadow(0 0 22px rgba(33,150,243,0.45));
 }
 .kayfa-sidebar-logo .logo-name {
     font-family: 'Cairo', sans-serif;
@@ -111,6 +130,12 @@ section[data-testid="stSidebar"] [data-testid="stFileUploader"] {
     line-height: 1;
     text-shadow: 0 0 40px rgba(33,150,243,0.6);
 }
+img.hero-logo-mark { width: 260px; }
+svg.hero-logo-mark { width: 100px; }
+img.hero-logo-mark, svg.hero-logo-mark {
+    height: auto;
+    filter: drop-shadow(0 0 26px rgba(33,150,243,0.5));
+}
 .hero-logo-text {
     font-family: 'Cairo', sans-serif;
     font-size: 4rem;
@@ -129,14 +154,16 @@ section[data-testid="stSidebar"] [data-testid="stFileUploader"] {
     font-weight: 600;
     margin-top: 6px;
 }
+.hero-header .hero-title,
 .hero-title {
     font-family: 'Cairo', sans-serif;
     font-size: 2.3rem;
     font-weight: 900;
-    color: #FFFFFF;
+    color: #FFFFFF !important;
     margin: 14px 0 8px 0;
     line-height: 1.2;
     letter-spacing: -0.5px;
+    text-shadow: 0 1px 12px rgba(0,0,0,0.35);
 }
 .hero-subtitle {
     font-size: 1.1rem;
@@ -165,13 +192,15 @@ section[data-testid="stSidebar"] [data-testid="stFileUploader"] {
     letter-spacing: 1.5px;
     margin-bottom: 12px;
 }
+.page-header .page-title,
 .page-title {
     font-family: 'Cairo', sans-serif;
     font-size: 2rem;
     font-weight: 900;
-    color: #FFFFFF;
+    color: #FFFFFF !important;
     margin: 4px 0 8px 0;
     letter-spacing: -0.3px;
+    text-shadow: 0 1px 12px rgba(0,0,0,0.35);
 }
 .page-question {
     font-size: 1.05rem;
@@ -182,12 +211,12 @@ section[data-testid="stSidebar"] [data-testid="stFileUploader"] {
 }
 
 /* ─── KPI CARDS ──────────────────────────────────────────────────────────── */
-.kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-bottom: 28px; }
+.kpi-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 28px; }
 .kpi-card {
     background: linear-gradient(135deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.02) 100%);
     border: 1px solid rgba(255,255,255,0.10);
     border-radius: 18px;
-    padding: 26px 30px;
+    padding: 24px 22px;
     text-align: center;
     backdrop-filter: blur(8px);
     position: relative;
@@ -203,6 +232,8 @@ section[data-testid="stSidebar"] [data-testid="stFileUploader"] {
 .kpi-card.blue::before  { background: linear-gradient(90deg, #2196F3, #42A5F5); }
 .kpi-card.red::before   { background: linear-gradient(90deg, #EF5350, #EF9A9A); }
 .kpi-card.amber::before { background: linear-gradient(90deg, #FF8F00, #FFC107); }
+.kpi-card.green::before { background: linear-gradient(90deg, #43A047, #81C784); }
+.kpi-card.purple::before{ background: linear-gradient(90deg, #7E57C2, #B39DDB); }
 .kpi-label {
     font-size: 12px;
     font-weight: 700;
@@ -214,14 +245,16 @@ section[data-testid="stSidebar"] [data-testid="stFileUploader"] {
 }
 .kpi-value {
     font-family: 'Cairo', sans-serif;
-    font-size: 2.7rem;
+    font-size: 2.4rem;
     font-weight: 900;
     color: #FFFFFF;
     line-height: 1;
     margin-bottom: 6px;
 }
-.kpi-value.red   { color: #EF9A9A; }
-.kpi-value.amber { color: #FFC107; }
+.kpi-value.red    { color: #EF9A9A; }
+.kpi-value.amber  { color: #FFC107; }
+.kpi-value.green  { color: #81C784; }
+.kpi-value.purple { color: #B39DDB; }
 .kpi-sub { font-size: 13px; color: #B0BEC5; }
 
 /* ─── CHART SECTION ──────────────────────────────────────────────────────── */
@@ -512,6 +545,66 @@ def add_company_avg(fig, value, orientation="h", text="Company Average", row=Non
 
 def show(fig):
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+
+def H(s):
+    """Collapse multi-line HTML to a single line.
+    Streamlit's markdown renderer treats blank / whitespace-only lines as block
+    separators and any 4-space-indented line that follows as a CODE block —
+    which is why large HTML strings were rendering as raw text. Stripping each
+    line and joining with a single space removes both triggers."""
+    return " ".join(line.strip() for line in s.splitlines() if line.strip())
+
+def _logo_file():
+    """Return (mime, base64) of a logo file if present in the repo, else None.
+    Intentionally NOT cached: the file is tiny, and caching a 'missing' result
+    would keep the logo hidden after the file is later added."""
+    candidates = [
+        ("image/png",     "assets/kayfa_logo.png"),
+        ("image/png",     "kayfa_logo.png"),
+        ("image/png",     "logo.png"),
+        ("image/png",     "assets/logo.png"),
+        ("image/svg+xml", "kayfa_logo.svg"),
+        ("image/svg+xml", "logo.svg"),
+        ("image/jpeg",    "logo.jpg"),
+    ]
+    for mime, p in candidates:
+        if os.path.exists(p):
+            with open(p, "rb") as fh:
+                return mime, base64.b64encode(fh.read()).decode()
+    return None
+
+def logo_mark(css_class):
+    """Real logo <img> if a file exists, otherwise a built-in Kayfa SVG emblem
+    (analytics hexagon) — never a flat emoji. Same CSS class for sizing."""
+    f = _logo_file()
+    if f:
+        mime, data = f
+        return f'<img class="{css_class}" src="data:{mime};base64,{data}" alt="Kayfa logo"/>'
+    # Recreation of the Kayfa faceted-hexagon emblem (bright azure + deep navy gem)
+    gb = f"kgb_{css_class}"   # bright facet gradient
+    gn = f"kgn_{css_class}"   # navy facet gradient
+    return (
+        f'<svg class="{css_class}" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Kayfa">'
+        f'<defs>'
+        f'<linearGradient id="{gb}" x1="0" y1="0" x2="1" y2="1">'
+        f'<stop offset="0" stop-color="#4D9BFF"/><stop offset="1" stop-color="#2563EB"/></linearGradient>'
+        f'<linearGradient id="{gn}" x1="0" y1="0" x2="1" y2="1">'
+        f'<stop offset="0" stop-color="#1E407F"/><stop offset="1" stop-color="#102A57"/></linearGradient>'
+        f'</defs>'
+        # six alternating facets radiating from centre (60,60)
+        f'<path d="M60 60 L60 8 L105 34 Z" fill="url(#{gb})"/>'
+        f'<path d="M60 60 L105 34 L105 86 Z" fill="url(#{gn})"/>'
+        f'<path d="M60 60 L105 86 L60 112 Z" fill="url(#{gb})"/>'
+        f'<path d="M60 60 L60 112 L15 86 Z" fill="url(#{gn})"/>'
+        f'<path d="M60 60 L15 86 L15 34 Z" fill="url(#{gb})"/>'
+        f'<path d="M60 60 L15 34 L60 8 Z" fill="url(#{gn})"/>'
+        # crisp outer hexagon edge
+        f'<path d="M60 8 L105 34 L105 86 L60 112 L15 86 L15 34 Z" fill="none" '
+        f'stroke="#7FB4FF" stroke-width="2.5" stroke-linejoin="round"/>'
+        # subtle centre highlight for the gem facet
+        f'<circle cx="60" cy="60" r="3.5" fill="#BBD9FF"/>'
+        f'</svg>'
+    )
 
 @st.cache_data
 def load_data(f=None):
@@ -1059,27 +1152,15 @@ QUESTIONS = {
 #  SIDEBAR — Kayfa logo (2x) + Navigation
 # ══════════════════════════════════════════════════════════════════════════════
 with st.sidebar:
-    st.markdown("""
+    st.markdown(f"""
     <div class="kayfa-sidebar-logo">
-        <div class="logo-mark">📊</div>
+        {logo_mark("logo-mark")}
         <div class="logo-name">KAYFA</div>
         <div class="logo-tag">Employee Analytics</div>
     </div>
     <div class="sidebar-divider"></div>
     """, unsafe_allow_html=True)
 
-    st.markdown('<div class="sidebar-section-title">📂 Data Source</div>', unsafe_allow_html=True)
-    uploaded = st.file_uploader("Upload (optional)", type=["xlsx","csv"], label_visibility="collapsed")
-
-    st.markdown("""
-    <div style="background:rgba(67,160,71,0.12);border:1px solid rgba(67,160,71,0.30);
-                border-radius:10px;padding:10px 14px;margin-top:8px;">
-        <p style="font-size:12.5px;color:#81C784;margin:0;font-weight:600;">✅ Data loaded</p>
-        <p style="font-size:11px;color:#B0BEC5;margin:2px 0 0 0;">74,498 employees · 24 variables</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown('<div class="sidebar-divider"></div>', unsafe_allow_html=True)
     st.markdown('<div class="sidebar-section-title">📋 Analysis Questions</div>', unsafe_allow_html=True)
 
     nav_options = ["🏠 Home"] + [f"{k} – {v['title']}" for k, v in QUESTIONS.items()] + ["🚀 Solution"]
@@ -1100,15 +1181,16 @@ with st.sidebar:
 # ══════════════════════════════════════════════════════════════════════════════
 #  LOAD DATA
 # ══════════════════════════════════════════════════════════════════════════════
-df = load_data(uploaded) if uploaded is not None else load_data()
+df = load_data()
 if df is None:
     st.error("❌ Data file not found — ensure final_dataset.csv is in the repo")
     st.stop()
 
-total  = len(df)
-left   = (df["Attrition"]=="Left").sum()
-stayed = total - left
-rate   = left/total*100
+total     = len(df)
+left      = (df["Attrition"]=="Left").sum()
+stayed    = total - left
+rate      = left/total*100
+avg_tenure = df["Years at Company"].mean()
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  RENDER HELPERS
@@ -1118,7 +1200,7 @@ def render_hero():
     st.markdown(f"""
     <div class="hero-header">
         <div class="hero-logo-row">
-            <div class="hero-logo-mark">📊</div>
+            {logo_mark("hero-logo-mark")}
             <div>
                 <div class="hero-logo-text">KAYFA</div>
                 <div class="hero-logo-tag">Employee Analytics Platform</div>
@@ -1132,20 +1214,30 @@ def render_hero():
 def render_kpis():
     st.markdown(f"""
     <div class="kpi-grid">
+        <div class="kpi-card amber">
+            <div class="kpi-label">Overall Attrition Rate</div>
+            <div class="kpi-value amber">{rate:.1f}%</div>
+            <div class="kpi-sub">Company Average</div>
+        </div>
         <div class="kpi-card blue">
             <div class="kpi-label">Total Employees</div>
             <div class="kpi-value">{total:,}</div>
-            <div class="kpi-sub">Full Dataset</div>
+            <div class="kpi-sub">100% of Workforce</div>
         </div>
         <div class="kpi-card red">
             <div class="kpi-label">Employees Left</div>
             <div class="kpi-value red">{left:,}</div>
-            <div class="kpi-sub">Attrition Count</div>
+            <div class="kpi-sub">Left the Company</div>
         </div>
-        <div class="kpi-card amber">
-            <div class="kpi-label">Attrition Rate</div>
-            <div class="kpi-value amber">{rate:.1f}%</div>
-            <div class="kpi-sub">Global avg: 10–15%</div>
+        <div class="kpi-card green">
+            <div class="kpi-label">Employees Stayed</div>
+            <div class="kpi-value green">{stayed:,}</div>
+            <div class="kpi-sub">Still with Company</div>
+        </div>
+        <div class="kpi-card purple">
+            <div class="kpi-label">Avg. Tenure (Years)</div>
+            <div class="kpi-value purple">{avg_tenure:.1f}</div>
+            <div class="kpi-sub">Company Average</div>
         </div>
     </div>
     <div class="section-divider"></div>
@@ -1182,14 +1274,35 @@ def render_insight_cards(cards):
     </div>
     """, unsafe_allow_html=True)
 
+# Wide charts (multi-panel subplots / heatmaps) always span the full width
+WIDE_CHARTS = {7, 9, 13, 19}
+
+def _render_chart(chart_id):
+    st.markdown('<div class="chart-section">', unsafe_allow_html=True)
+    CHARTS[chart_id](df)
+    st.markdown('</div>', unsafe_allow_html=True)
+
 def render_question_page(q_key):
     q = QUESTIONS[q_key]
     render_page_header(q_key, q)
     render_kpis()
+    pending = []  # narrow charts queued to render two-per-row
+
+    def flush():
+        while pending:
+            row = pending[:2]
+            del pending[:2]
+            for col, cid in zip(st.columns(len(row)), row):
+                with col:
+                    _render_chart(cid)
+
     for chart_id in q["charts"]:
-        st.markdown('<div class="chart-section">', unsafe_allow_html=True)
-        CHARTS[chart_id](df)
-        st.markdown('</div>', unsafe_allow_html=True)
+        if chart_id in WIDE_CHARTS:
+            flush()
+            _render_chart(chart_id)
+        else:
+            pending.append(chart_id)
+    flush()
     render_insight_cards(q["cards"])
 
 def render_home():
@@ -1221,13 +1334,13 @@ def render_home():
         </div>
         """
     cards_html += '</div>'
-    st.markdown(cards_html, unsafe_allow_html=True)
+    st.markdown(H(cards_html), unsafe_allow_html=True)
 
 def render_solution():
     st.markdown(f"""
     <div class="hero-header">
         <div class="hero-logo-row">
-            <div class="hero-logo-mark">🚀</div>
+            {logo_mark("hero-logo-mark")}
             <div>
                 <div class="hero-logo-text">KAYFA</div>
                 <div class="hero-logo-tag">Executive Action Plan</div>
@@ -1240,7 +1353,7 @@ def render_solution():
 
     render_kpis()
 
-    st.markdown("""
+    st.markdown(H("""
     <div class="solution-section">
 
         <div class="exec-summary">
@@ -1368,7 +1481,7 @@ def render_solution():
             </p>
         </div>
     </div>
-    """, unsafe_allow_html=True)
+    """), unsafe_allow_html=True)
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  ROUTER
