@@ -163,7 +163,6 @@ section[data-testid="stSidebar"] [data-testid="stFileUploader"] {
     border-radius: 20px;
     letter-spacing: 0.5px;
 }
-/* ✅ CHANGE 1: Chart title → pure white */
 .chart-name {
     font-family: 'Cairo', sans-serif;
     font-size: 1.25rem;
@@ -190,9 +189,16 @@ section[data-testid="stSidebar"] [data-testid="stFileUploader"] {
 }
 .insight-text {
     font-size: 14px;
-    color: #CFD8DC;
+    color: #E8EAF6;
     line-height: 1.7;
     margin: 0;
+}
+.insight-text strong { 
+    color: #FF6B6B;
+    background: rgba(239,83,80,0.15);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-weight: 700;
 }
 
 /* Warning box */
@@ -213,19 +219,16 @@ section[data-testid="stSidebar"] [data-testid="stFileUploader"] {
 }
 .warning-text {
     font-size: 14px;
-    color: #CFD8DC;
+    color: #E8EAF6;
     line-height: 1.7;
     margin: 0;
 }
-
-/* ✅ CHANGE 2: Strong/bold highlights → yellow-orange with subtle background */
-.insight-text strong,
-.warning-text strong {
+.warning-text strong { 
     color: #FFD54F;
-    font-weight: 700;
-    background: rgba(255, 213, 79, 0.13);
-    padding: 1px 6px;
+    background: rgba(255,213,79,0.15);
+    padding: 1px 5px;
     border-radius: 4px;
+    font-weight: 700;
 }
 
 /* Upload placeholder */
@@ -255,6 +258,40 @@ section[data-testid="stSidebar"] [data-testid="stFileUploader"] {
 /* Metric overrides */
 [data-testid="metric-container"] {
     background: transparent !important;
+}
+
+/* Keyword highlights */
+.kw-red {
+    background: rgba(239,83,80,0.2);
+    color: #FF6B6B;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 5px;
+    border: 1px solid rgba(239,83,80,0.3);
+}
+.kw-green {
+    background: rgba(39,174,96,0.2);
+    color: #69F0AE;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 5px;
+    border: 1px solid rgba(39,174,96,0.3);
+}
+.kw-blue {
+    background: rgba(33,150,243,0.2);
+    color: #64B5F6;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 5px;
+    border: 1px solid rgba(33,150,243,0.3);
+}
+.kw-amber {
+    background: rgba(255,143,0,0.2);
+    color: #FFD54F;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 5px;
+    border: 1px solid rgba(255,143,0,0.3);
 }
 </style>
 """, unsafe_allow_html=True)
@@ -406,17 +443,28 @@ def chart7(df):
     show(fig)
 
 def chart8(df):
+    df2 = df.copy()
+    # normalize quotes
+    df2["Education Level"] = df2["Education Level"].str.replace("’","'").str.replace("‘","'")
     order=["High School","Associate Degree","Bachelor's Degree","Master's Degree","PhD"]
-    pct=df.groupby("Education Level")["Attrition"].apply(lambda x:(x=="Left").mean()*100).reindex(order)
-    counts=df["Education Level"].value_counts().reindex(order)
-    fig=go.Figure(go.Bar(x=pct.index,y=pct.values,
-        marker=dict(color=pct.values,colorscale=BLUE_SEQ,showscale=True),
-        text=[f"{v:.1f}%" for v in pct.values],textposition="outside",textfont=dict(color="#90CAF9")))
-    for edu,p in zip(pct.index,pct.values):
-        fig.add_annotation(x=edu,y=p+3,text=f"n={counts[edu]:,}",
-                           showarrow=False,font=dict(size=10,color="#78909C"))
-    fig.update_layout(**layout("Attrition by Education","Does education correlate with turnover?"))
-    fig.update_xaxes(**ax(title_text="Education")); fig.update_yaxes(**ax(title_text="Rate (%)",range=[0,pct.max()*1.35]))
+    short_labels=["High\nSchool","Associate\nDegree","Bachelor's\nDegree","Master's\nDegree","PhD"]
+    pct=df2.groupby("Education Level")["Attrition"].apply(lambda x:(x=="Left").mean()*100).reindex(order)
+    counts=df2["Education Level"].value_counts().reindex(order)
+    pct_vals = [v if not pd.isna(v) else 0 for v in pct.values]
+    count_vals = [counts.get(k,0) for k in order]
+    fig=go.Figure(go.Bar(
+        x=short_labels, y=pct_vals,
+        marker=dict(color=pct_vals,colorscale=BLUE_SEQ,showscale=True,
+                    colorbar=dict(title="Rate %",tickfont=dict(color="#90A4AE"),title_font=dict(color="#90CAF9"))),
+        text=[f"{v:.1f}%" if v>0 else "N/A" for v in pct_vals],
+        textposition="outside",textfont=dict(color="#90CAF9",size=13)))
+    for i,(lbl,p,n) in enumerate(zip(short_labels,pct_vals,count_vals)):
+        if p > 0:
+            fig.add_annotation(x=lbl,y=p+3.5,text=f"n={n:,}",
+                               showarrow=False,font=dict(size=11,color="#78909C"))
+    fig.update_layout(**layout("Attrition by Education","Does education correlate with turnover?",500))
+    fig.update_xaxes(**ax(title_text="Education Level",tickfont=dict(size=12,color="#90CAF9")))
+    fig.update_yaxes(**ax(title_text="Rate (%)",range=[0,60]))
     show(fig)
 
 def chart9(df):
@@ -588,27 +636,26 @@ def chart19(df):
     show(fig)
 
 # ── Insights per chart ───────────────────────────────────────────────────────
-# ✅ CHANGE 3: All <strong> tags now render as yellow highlighted keywords
 INSIGHTS = {
-    "1":  ("insight", "نسبة الـ Attrition تبلغ <strong>47.5%</strong> — ضعف المعدل العالمي الطبيعي <strong>(10-15%)</strong>. يعني تقريباً <strong>موظف من كل 2 يغادر الشركة</strong>، وهو ما يشير إلى <strong>مشكلة هيكلية عميقة</strong> تستوجب تحقيقاً فورياً."),
-    "2":  ("warning", "الإناث يغادرن بنسبة <strong>53%</strong> مقابل <strong>42.9%</strong> للذكور — فارق <strong>10 نقاط كاملة</strong>. هذا يوحي بوجود <strong>تحديات خاصة تواجه الموظفات</strong>، سواء في التوازن الأسري أو فرص الترقي أو بيئة العمل."),
-    "3":  ("insight", "فئة <strong>18-25 سنة</strong> هي الأعلى في المغادرة بنسبة <strong>53.1%</strong>. كل ما زاد العمر انخفضت النسبة تدريجياً، مما يستوجب التركيز على <strong>برامج الاحتفاظ بالموظفين الجدد</strong>."),
-    "4":  ("insight", "الفارق بين الوظائف لا يتجاوز <strong>2%</strong> — وهذا يؤكد أن المشكلة <strong>ليست في وظيفة بعينها</strong>، بل هي <strong>مشكلة مؤسسية شاملة</strong> تمس ثقافة الشركة وسياساتها."),
-    "5":  ("warning", "الفارق في الراتب بين من غادروا ومن بقوا هو <strong>46 دولاراً فقط</strong>! هذا يكشف أن <strong>الراتب ليس السبب الرئيسي للمغادرة</strong>، مما يعني أن <strong>رفع الرواتب وحده لن يحل المشكلة</strong>."),
-    "6":  ("warning", "موظفو الـ <strong>Poor WLB</strong> يغادرون بنسبة <strong>60.2%</strong> مقابل <strong>35.7%</strong> لأصحاب الـ Excellent — فارق <strong>24.5 نقطة</strong>! <strong>التوازن بين العمل والحياة</strong> هو أكثر العوامل تأثيراً على الاستبقاء."),
-    "7":  ("insight", "الموظفون الذين يعملون أوفر تايم يغادرون بنسبة <strong>51.5%</strong> مقابل <strong>45.5%</strong>. والخطير أن <strong>ثلث الموظفين</strong> (24,341) يعملون أوفر تايم، مما يشكل <strong>ضغطاً مزمناً</strong> على المؤسسة."),
-    "8":  ("insight", "أصحاب <strong>PhD</strong> يغادرون بنسبة <strong>24.4% فقط</strong> مقارنة بـ ~48% لباقي المستويات — <strong>فارق مذهل</strong>! في حين أن باقي المستويات التعليمية <strong>متقاربة جداً</strong> في نسب المغادرة."),
-    "9":  ("insight", "أقوى عامل للاستبقاء هو <strong>الترقيات (-0.081)</strong>، وأقوى عامل للمغادرة هو <strong>بُعد المسافة (+0.094)</strong>. أما الراتب فعلاقته بالمغادرة <strong>شبه معدومة (0.011)</strong>."),
-    "10": ("warning", "أول <strong>5 سنوات</strong> هي الأخطر بنسبة مغادرة <strong>51-53%</strong>. بعد <strong>10 سنوات</strong> تنخفض النسبة بشكل ملحوظ، مما يجعل <strong>الـ Onboarding والسنوات الأولى</strong> أولوية قصوى."),
-    "11": ("warning", "الأعزب/العزباء يغادرون بنسب صادمة: <strong>72.2%</strong> للإناث و<strong>62.3%</strong> للذكور. <strong>المتزوجون هم الأكثر استقراراً</strong> بفارق كبير بسبب الالتزامات الأسرية."),
-    "12": ("insight", "الـ <strong>Remote Work</strong> يخفض الـ Attrition بأكثر من <strong>28 نقطة</strong> في جميع أحجام الشركات! من <strong>~53% On-site</strong> إلى <strong>~24% Remote</strong> — هذا <strong>أقوى قرار يمكن اتخاذه</strong> للاحتفاظ بالموظفين."),
-    "13": ("warning", "الأخطر هو الموظف <strong>High Performance + Low Satisfaction</strong> — شاطر لكن غير راضٍ، <strong>وسيجد فرصة أخرى بسرعة</strong>. يجب تحديد هؤلاء والتحدث معهم <strong>قبل مغادرتهم</strong>."),
-    "14": ("insight", "كل ما زادت المسافة، زادت نسبة المغادرة من <strong>41.7%</strong> للأقرب إلى <strong>52.9%</strong> للأبعد. توفير خيار <strong>Hybrid/Remote</strong> للموظفين البعيدين سيقلل هذا الأثر بشكل كبير."),
-    "15": ("warning", "<strong>95%</strong> من الموظفين ليس لديهم أي <strong>فرصة قيادية</strong>! هذا يعني <strong>غياب مسار التطوير الوظيفي</strong> لغالبية الموظفين، وهو من أهم أسباب الشعور بالركود والرغبة في المغادرة."),
-    "16": ("warning", "<strong>83%</strong> من الموظفين <strong>محرومون من فرص الابتكار</strong>. الموظف الذي يكرر نفس المهام يومياً بدون تحدٍّ <strong>سيبحث عن بيئة أكثر إثارة وتحفيزاً</strong>."),
-    "17": ("insight", "السمعة الضعيفة <strong>(Poor)</strong> ترفع نسبة المغادرة إلى <strong>56%</strong> مقارنة بـ <strong>43%</strong> للسمعة الجيدة — فارق <strong>13 نقطة</strong>. <strong>الموظف يريد أن يفتخر بمكان عمله</strong> أمام الآخرين."),
-    "18": ("insight", "الفارق بين أعلى وأدنى مستوى من التقدير <strong>1.8% فقط</strong>! مما يؤكد أن <strong>التقدير اللفظي بدون مكافآت ملموسة أو ترقيات</strong> لا أثر له على قرار البقاء."),
-    "19": ("warning", "الأخطر في الداتا كلها: <strong>Entry Level بدون Remote = 69.3%</strong> مغادرة! بينما <strong>Senior مع Remote = 5.2% فقط</strong>. <strong>تركيز جهود الـ Remote على الـ Entry Level</strong> هو أولوية الأولويات."),
+    "1":  ("insight", 'نسبة الـ Attrition تبلغ <span class="kw-red">47.5%</span> — ضعف المعدل العالمي الطبيعي <span class="kw-blue">10-15%</span>. يعني تقريباً <span class="kw-red">موظف من كل 2 يغادر الشركة</span>، وهو ما يشير إلى <span class="kw-amber">مشكلة هيكلية عميقة</span> تستوجب تحقيقاً فورياً.'),
+    "2":  ("warning", 'الإناث يغادرن بنسبة <span class="kw-red">53%</span> مقابل <span class="kw-blue">42.9%</span> للذكور — فارق <span class="kw-amber">10 نقاط كاملة</span>. هذا يوحي بوجود تحديات خاصة تواجه الموظفات، سواء في <span class="kw-red">التوازن الأسري</span> أو <span class="kw-red">فرص الترقي</span> أو بيئة العمل.'),
+    "3":  ("insight", 'فئة <span class="kw-red">18-25 سنة</span> هي الأعلى في المغادرة بنسبة <span class="kw-red">53.1%</span>. كل ما زاد العمر انخفضت النسبة تدريجياً، مما يستوجب التركيز على <span class="kw-green">برامج الاحتفاظ بالموظفين الجدد</span>.'),
+    "4":  ("insight", 'الفارق بين الوظائف لا يتجاوز <span class="kw-blue">2%</span> — وهذا يؤكد أن المشكلة <span class="kw-red">ليست في وظيفة بعينها</span>، بل هي <span class="kw-amber">مشكلة مؤسسية شاملة</span> تمس ثقافة الشركة وسياساتها.'),
+    "5":  ("warning", 'الفارق في الراتب بين من غادروا ومن بقوا هو <span class="kw-amber">46 دولاراً فقط</span>! هذا يكشف أن <span class="kw-red">الراتب ليس السبب الرئيسي للمغادرة</span>، مما يعني أن <span class="kw-amber">رفع الرواتب وحده لن يحل المشكلة</span>.'),
+    "6":  ("warning", 'موظفو الـ <span class="kw-red">Poor WLB</span> يغادرون بنسبة <span class="kw-red">60.2%</span> مقابل <span class="kw-green">35.7%</span> لأصحاب الـ Excellent — فارق <span class="kw-amber">24.5 نقطة</span>! <span class="kw-blue">التوازن بين العمل والحياة</span> هو أكثر العوامل تأثيراً على الاستبقاء.'),
+    "7":  ("insight", 'الموظفون الذين يعملون <span class="kw-red">أوفر تايم</span> يغادرون بنسبة <span class="kw-red">51.5%</span> مقابل <span class="kw-green">45.5%</span>. والخطير أن <span class="kw-amber">ثلث الموظفين (24,341)</span> يعملون أوفر تايم، مما يشكل <span class="kw-red">ضغطاً مزمناً</span> على المؤسسة.'),
+    "8":  ("insight", 'أصحاب <span class="kw-green">PhD</span> يغادرون بنسبة <span class="kw-green">24.4% فقط</span> مقارنة بـ <span class="kw-red">~48%</span> لباقي المستويات — فارق مذهل! في حين أن باقي المستويات التعليمية <span class="kw-blue">متقاربة جداً</span> في نسب المغادرة.'),
+    "9":  ("insight", 'أقوى عامل للاستبقاء هو <span class="kw-green">الترقيات (-0.081)</span>، وأقوى عامل للمغادرة هو <span class="kw-red">بُعد المسافة (+0.094)</span>. أما الراتب فعلاقته بالمغادرة <span class="kw-amber">شبه معدومة (0.011)</span>.'),
+    "10": ("warning", 'أول <span class="kw-red">5 سنوات</span> هي الأخطر بنسبة مغادرة <span class="kw-red">51-53%</span>. بعد <span class="kw-green">10 سنوات</span> تنخفض النسبة بشكل ملحوظ، مما يجعل <span class="kw-amber">الـ Onboarding والسنوات الأولى</span> أولوية قصوى.'),
+    "11": ("warning", 'الأعزب/العزباء يغادرون بنسب صادمة: <span class="kw-red">72.2%</span> للإناث و<span class="kw-red">62.3%</span> للذكور. <span class="kw-green">المتزوجون</span> هم الأكثر استقراراً بفارق كبير بسبب <span class="kw-blue">الالتزامات الأسرية</span>.'),
+    "12": ("insight", 'الـ <span class="kw-green">Remote Work</span> يخفض الـ Attrition بأكثر من <span class="kw-green">28 نقطة</span> في جميع أحجام الشركات! من <span class="kw-red">~53% On-site</span> إلى <span class="kw-green">~24% Remote</span> — هذا <span class="kw-amber">أقوى قرار</span> يمكن اتخاذه للاحتفاظ بالموظفين.'),
+    "13": ("warning", 'الأخطر هو الموظف <span class="kw-red">High Performance + Low Satisfaction</span> — شاطر لكن غير راضٍ، وسيجد فرصة أخرى بسرعة. يجب <span class="kw-amber">تحديد هؤلاء والتحدث معهم</span> قبل مغادرتهم.'),
+    "14": ("insight", 'كل ما زادت المسافة، زادت نسبة المغادرة من <span class="kw-green">41.7%</span> للأقرب إلى <span class="kw-red">52.9%</span> للأبعد. توفير خيار <span class="kw-green">Hybrid/Remote</span> للموظفين البعيدين سيقلل هذا الأثر بشكل كبير.'),
+    "15": ("warning", '<span class="kw-red">95%</span> من الموظفين ليس لديهم أي <span class="kw-red">فرصة قيادية</span>! هذا يعني غياب <span class="kw-amber">مسار التطوير الوظيفي</span> لغالبية الموظفين، وهو من أهم أسباب الشعور بالركود والرغبة في المغادرة.'),
+    "16": ("warning", '<span class="kw-red">83%</span> من الموظفين محرومون من <span class="kw-red">فرص الابتكار</span>. الموظف الذي يكرر نفس المهام يومياً بدون تحدٍّ <span class="kw-amber">سيبحث عن بيئة أكثر إثارة وتحفيزاً</span>.'),
+    "17": ("insight", 'السمعة الضعيفة <span class="kw-red">(Poor)</span> ترفع نسبة المغادرة إلى <span class="kw-red">56%</span> مقارنة بـ <span class="kw-green">43%</span> للسمعة الجيدة — فارق <span class="kw-amber">13 نقطة</span>. الموظف يريد أن <span class="kw-blue">يفتخر بمكان عمله</span> أمام الآخرين.'),
+    "18": ("insight", 'الفارق بين أعلى وأدنى مستوى من التقدير <span class="kw-amber">1.8% فقط</span>! مما يؤكد أن <span class="kw-red">التقدير اللفظي بدون مكافآت ملموسة</span> أو ترقيات <span class="kw-red">لا أثر له</span> على قرار البقاء.'),
+    "19": ("warning", 'الأخطر في الداتا كلها: <span class="kw-red">Entry Level بدون Remote = 69.3%</span> مغادرة! بينما <span class="kw-green">Senior مع Remote = 5.2% فقط</span>. تركيز جهود الـ Remote على <span class="kw-amber">الـ Entry Level هو أولوية الأولويات</span>.'),
 }
 
 # ── Registry ─────────────────────────────────────────────────────────────────
@@ -634,7 +681,7 @@ CHARTS = {
     "19": ("Job Level x Remote Work",        chart19),
 }
 
-LOGO_B64 = "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"
+LOGO_B64 = "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"
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 with st.sidebar:
@@ -686,6 +733,7 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
+# ── No file state ─────────────────────────────────────────────────────────────
 # ── Load & KPIs ───────────────────────────────────────────────────────────────
 df = load_data(uploaded) if uploaded is not None else load_data()
 
@@ -744,17 +792,18 @@ else:
             <div class="chart-title-row">
                 <div>
                     <span class="chart-number">CHART {k} / 19</span>
-                    <h3 style="margin-top:8px; font-family:'Cairo',sans-serif; font-size:1.25rem; font-weight:700; color:#FFFFFF; margin-bottom:0;">{name}</h3>
+                    <h3 class="chart-name" style="margin-top:8px;">{name}</h3>
                 </div>
             </div>
         """, unsafe_allow_html=True)
 
         fn(df)
 
+        p_class = 'insight-text' if insight_type == 'insight' else 'warning-text'
         st.markdown(f"""
             <div class="{box_class}">
                 <div class="{title_class}">{icon}</div>
-                <p class="{'insight-text' if insight_type == 'insight' else 'warning-text'}">{insight_text}</p>
+                <p class="{p_class}" dir="auto" style="text-align:right; unicode-bidi:plaintext;">{insight_text}</p>
             </div>
         </div>
         """, unsafe_allow_html=True)
