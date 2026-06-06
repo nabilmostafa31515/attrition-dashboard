@@ -315,9 +315,15 @@ def layout(title, sub, h=480):
     )
 
 def ax(**kw):
-    return dict(gridcolor=C["grid"], linecolor="#1E3A5F", zeroline=False,
-                tickfont=dict(size=11, color="#90A4AE"),
-                title_font=dict(size=12, color="#90CAF9"), **kw)
+    defaults = dict(
+        gridcolor=C["grid"],
+        linecolor="#1E3A5F",
+        zeroline=False,
+        tickfont=dict(size=11, color="#90A4AE"),
+        title_font=dict(size=12, color="#90CAF9")
+    )
+    defaults.update(kw)  
+    return defaults
 
 def show(fig):
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
