@@ -136,9 +136,10 @@ section[data-testid="stSidebar"] [data-testid="stFileUploader"] {
     font-family: 'Cairo', sans-serif;
     font-size: 1.45rem;
     font-weight: 800;
-    color: #FFFFFF;
+    color: #64B5F6;
     margin-bottom: 0;
     margin-top: 8px;
+    text-shadow: 0 0 20px rgba(100,181,246,0.3);
 }
 
 .insight-box {
