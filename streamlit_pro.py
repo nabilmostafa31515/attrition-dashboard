@@ -1151,6 +1151,7 @@ QUESTIONS = {
 # ══════════════════════════════════════════════════════════════════════════════
 #  SIDEBAR — Kayfa logo (2x) + Navigation
 # ══════════════════════════════════════════════════════════════════════════════
+# ── Sidebar branding (always visible) ──────────────────────────────────────
 with st.sidebar:
     st.markdown(f"""
     <div class="kayfa-sidebar-logo">
@@ -1159,23 +1160,7 @@ with st.sidebar:
         <div class="logo-tag">Employee Analytics</div>
     </div>
     <div class="sidebar-divider"></div>
-    """, unsafe_allow_html=True)
-
-    st.markdown('<div class="sidebar-section-title">📋 Analysis Questions</div>', unsafe_allow_html=True)
-
-    nav_options = ["🏠 Home"] + [f"{k} – {v['title']}" for k, v in QUESTIONS.items()] + ["🚀 Solution"]
-    selected_page = st.radio("Navigation", nav_options, label_visibility="collapsed", index=0)
-
-    st.markdown('<div class="sidebar-divider"></div>', unsafe_allow_html=True)
-    st.markdown("""
-    <div style="background:rgba(33,150,243,0.08);border:1px solid rgba(33,150,243,0.22);
-                border-radius:10px;padding:14px 16px;">
-        <p style="font-size:12px;color:#FFFFFF;margin:0;text-align:center;line-height:2;font-weight:500;">
-            📊 19 Interactive Charts<br>
-            💡 10 Strategic Questions<br>
-            🚀 Executive Action Plan
-        </p>
-    </div>
+    <div class="sidebar-section-title">📋 Analysis Questions</div>
     """, unsafe_allow_html=True)
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -1278,9 +1263,8 @@ def render_insight_cards(cards):
 WIDE_CHARTS = {7, 9, 13, 19}
 
 def _render_chart(chart_id):
-    st.markdown('<div class="chart-section">', unsafe_allow_html=True)
-    CHARTS[chart_id](df)
-    st.markdown('</div>', unsafe_allow_html=True)
+    with st.container():
+        CHARTS[chart_id](df)
 
 def render_question_page(q_key):
     q = QUESTIONS[q_key]
@@ -1309,9 +1293,8 @@ def render_home():
     render_hero()
     render_kpis()
     # Homepage shows the headline overview chart
-    st.markdown('<div class="chart-section">', unsafe_allow_html=True)
-    chart1(df)
-    st.markdown('</div>', unsafe_allow_html=True)
+    with st.container():
+        chart1(df)
 
     # Quick-navigation card grid
     st.markdown("""
@@ -1484,16 +1467,17 @@ def render_solution():
     """), unsafe_allow_html=True)
 
 # ══════════════════════════════════════════════════════════════════════════════
-#  ROUTER
+#  NAVIGATION — st.navigation / st.Page (native Streamlit multipage nav)
 # ══════════════════════════════════════════════════════════════════════════════
-if selected_page == "🏠 Home":
-    render_home()
-elif selected_page == "🚀 Solution":
-    render_solution()
-else:
-    # Format: "Q1 – Title"
-    q_key = selected_page.split(" – ")[0]
-    if q_key in QUESTIONS:
-        render_question_page(q_key)
-    else:
-        render_home()
+_pages = [st.Page(render_home,     title="Home",     icon="🏠", default=True)]
+for _k, _v in QUESTIONS.items():
+    _q_key = _k   # capture loop var
+    _pages.append(
+        st.Page(lambda _key=_q_key: render_question_page(_key),
+                title=f"{_k} – {_v['title']}",
+                icon="📊")
+    )
+_pages.append(st.Page(render_solution, title="Solution", icon="🚀"))
+
+pg = st.navigation(_pages, position="sidebar", expanded=True)
+pg.run()
