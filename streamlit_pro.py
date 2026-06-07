@@ -1151,17 +1151,7 @@ QUESTIONS = {
 # ══════════════════════════════════════════════════════════════════════════════
 #  SIDEBAR — Kayfa logo (2x) + Navigation
 # ══════════════════════════════════════════════════════════════════════════════
-# ── Sidebar branding (always visible) ──────────────────────────────────────
-with st.sidebar:
-    st.markdown(f"""
-    <div class="kayfa-sidebar-logo">
-        {logo_mark("logo-mark")}
-        <div class="logo-name">KAYFA</div>
-        <div class="logo-tag">Employee Analytics</div>
-    </div>
-    <div class="sidebar-divider"></div>
-    <div class="sidebar-section-title">📋 Analysis Questions</div>
-    """, unsafe_allow_html=True)
+# Sidebar branding is rendered inside each page via render_sidebar_brand()
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  LOAD DATA
@@ -1180,6 +1170,29 @@ avg_tenure = df["Years at Company"].mean()
 # ══════════════════════════════════════════════════════════════════════════════
 #  RENDER HELPERS
 # ══════════════════════════════════════════════════════════════════════════════
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  SIDEBAR BRANDING — called once at the top of every page function
+# ══════════════════════════════════════════════════════════════════════════════
+def render_sidebar_brand():
+    with st.sidebar:
+        st.markdown(f"""
+        <div class="kayfa-sidebar-logo">
+            {logo_mark("logo-mark")}
+            <div class="logo-name">KAYFA</div>
+            <div class="logo-tag">Employee Analytics</div>
+        </div>
+        <div class="sidebar-divider"></div>
+        <div style="background:rgba(33,150,243,0.08);border:1px solid rgba(33,150,243,0.22);
+                    border-radius:10px;padding:14px 16px;margin-top:12px;">
+            <p style="font-size:12px;color:#FFFFFF;margin:0;text-align:center;line-height:2;font-weight:500;">
+                📊 19 Interactive Charts<br>
+                💡 10 Strategic Questions<br>
+                🚀 Executive Action Plan
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+
 def render_hero():
     """Premium homepage hero with large Kayfa logo top-left."""
     st.markdown(f"""
@@ -1267,6 +1280,7 @@ def _render_chart(chart_id):
         CHARTS[chart_id](df)
 
 def render_question_page(q_key):
+    render_sidebar_brand()
     q = QUESTIONS[q_key]
     render_page_header(q_key, q)
     render_kpis()
@@ -1290,6 +1304,7 @@ def render_question_page(q_key):
     render_insight_cards(q["cards"])
 
 def render_home():
+    render_sidebar_brand()
     render_hero()
     render_kpis()
     # Homepage shows the headline overview chart
@@ -1320,6 +1335,7 @@ def render_home():
     st.markdown(H(cards_html), unsafe_allow_html=True)
 
 def render_solution():
+    render_sidebar_brand()
     st.markdown(f"""
     <div class="hero-header">
         <div class="hero-logo-row">
