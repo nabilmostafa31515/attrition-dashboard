@@ -991,15 +991,23 @@ def chart19(df):
     fig = make_subplots(rows=1, cols=2, column_widths=[0.6,0.4],
         subplot_titles=("Attrition Count & Rate by Job Level","Rate % — Job Level × Remote Work"),
         specs=[[{"type":"bar"},{"type":"heatmap"}]])
+    # Bars with counts inside
     fig.add_trace(go.Bar(name="Stayed", x=order_jl, y=g["Stayed"], marker_color=C["stayed"],
         text=[f"{v:,}" for v in g["Stayed"]], textposition="inside",
         textfont=dict(color="#FFFFFF", size=13)), row=1, col=1)
     fig.add_trace(go.Bar(name="Left", x=order_jl, y=g["Left"], marker_color=C["left"],
         text=[f"{v:,}" for v in g["Left"]], textposition="inside",
         textfont=dict(color="#FFFFFF", size=13)), row=1, col=1)
-    fig.add_trace(go.Scatter(name="Rate %", x=order_jl, y=gp["Left"], yaxis="y2",
-        mode="lines+markers", line=dict(color="#FF8F00", width=3),
-        marker=dict(size=12, color="#FF8F00")), row=1, col=1)
+    # Rate % as annotations above the tallest bar (avoids broken y2 in subplots)
+    for jl in order_jl:
+        top = max(g.loc[jl, "Stayed"], g.loc[jl, "Left"]) + 700
+        fig.add_annotation(
+            x=jl, y=top, xref="x", yref="y",
+            text=f"<b>{gp.loc[jl,'Left']:.1f}%</b>",
+            showarrow=False,
+            font=dict(size=15, color="#FF8F00"),
+            row=1, col=1)
+    # Heatmap
     fig.add_trace(go.Heatmap(z=pivot.values, x=pivot.columns.tolist(), y=order_jl,
         colorscale=BLUE_SEQ,
         text=pivot.round(1).values, texttemplate="%{text:.1f}%",
@@ -1010,10 +1018,7 @@ def chart19(df):
         showscale=True), row=1, col=2)
     fig.update_layout(**layout("Job Level Impact × Remote Work",
                                "Who are the highest-risk employees in the entire organization?", 520),
-        barmode="group",
-        yaxis2=dict(overlaying="y", side="right", range=[0,100], showgrid=False,
-                    title="Rate (%)", tickfont=dict(color="#FFFFFF", size=13),
-                    title_font=dict(color="#FFFFFF", size=15)))
+        barmode="group")
     for ann in fig.layout.annotations:
         ann.font.size = 15
         ann.font.color = "#FFFFFF"
