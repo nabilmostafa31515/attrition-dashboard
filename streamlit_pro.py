@@ -1504,15 +1504,29 @@ _ST_VER = tuple(int(x) for x in _st_version_check.__version__.split(".")[:2])
 _HAS_NAV = _ST_VER >= (1, 36)
 
 if _HAS_NAV:
-    _pages = [st.Page(render_home, title="Home", icon="🏠", default=True)]
-    for _k, _v in QUESTIONS.items():
-        _q_key = _k
-        _pages.append(
-            st.Page(lambda _key=_q_key: render_question_page(_key),
-                    title=f"{_k} – {_v['title']}",
-                    icon="📊")
-        )
-    _pages.append(st.Page(render_solution, title="Solution", icon="🚀"))
+    # Named wrapper functions required — lambdas share __name__="<lambda>",
+    # causing duplicate url_path hashes and a StreamlitAPIException.
+    def _page_home():        render_home()
+    def _page_q1():         render_question_page("Q1")
+    def _page_q2():         render_question_page("Q2")
+    def _page_q3():         render_question_page("Q3")
+    def _page_q4():         render_question_page("Q4")
+    def _page_q5():         render_question_page("Q5")
+    def _page_q6():         render_question_page("Q6")
+    def _page_q7():         render_question_page("Q7")
+    def _page_q8():         render_question_page("Q8")
+    def _page_q9():         render_question_page("Q9")
+    def _page_q10():        render_question_page("Q10")
+    def _page_solution():   render_solution()
+
+    _q_funcs = [_page_q1, _page_q2, _page_q3, _page_q4, _page_q5,
+                _page_q6, _page_q7, _page_q8, _page_q9, _page_q10]
+
+    _pages = [st.Page(_page_home, title="Home", icon="🏠", default=True)]
+    for (_k, _v), _fn in zip(QUESTIONS.items(), _q_funcs):
+        _pages.append(st.Page(_fn, title=f"{_k} – {_v['title']}", icon="📊"))
+    _pages.append(st.Page(_page_solution, title="Solution", icon="🚀"))
+
     pg = st.navigation(_pages, position="sidebar", expanded=True)
     pg.run()
 else:
