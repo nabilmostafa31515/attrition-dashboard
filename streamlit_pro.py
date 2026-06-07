@@ -19,7 +19,9 @@ st.set_page_config(
 # ══════════════════════════════════════════════════════════════════════════════
 #  PREMIUM CSS — Executive Dark Navy Theme
 # ══════════════════════════════════════════════════════════════════════════════
-st.markdown("""
+@st.cache_data
+def _css_string():
+    return """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
 
@@ -473,7 +475,10 @@ img.hero-logo-mark, svg.hero-logo-mark {
     margin: 8px 0 20px 0;
 }
 </style>
-""", unsafe_allow_html=True)
+</style>"""
+
+def inject_css():
+    st.markdown(_css_string(), unsafe_allow_html=True)
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  PALETTE & HELPERS — White axis labels, larger fonts everywhere
@@ -1175,6 +1180,7 @@ avg_tenure = df["Years at Company"].mean()
 #  SIDEBAR BRANDING — called once at the top of every page function
 # ══════════════════════════════════════════════════════════════════════════════
 def render_sidebar_brand():
+    inject_css()
     with st.sidebar:
         st.markdown(f"""
         <div class="kayfa-sidebar-logo">
