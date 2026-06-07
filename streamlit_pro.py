@@ -1159,18 +1159,25 @@ QUESTIONS = {
 # Sidebar branding is rendered inside each page via render_sidebar_brand()
 
 # ══════════════════════════════════════════════════════════════════════════════
-#  LOAD DATA
+#  LOAD DATA  (pure Python — no st.* calls at module level)
 # ══════════════════════════════════════════════════════════════════════════════
 df = load_data()
-if df is None:
-    st.error("❌ Data file not found — ensure final_dataset.csv is in the repo")
-    st.stop()
 
-total     = len(df)
-left      = (df["Attrition"]=="Left").sum()
-stayed    = total - left
-rate      = left/total*100
-avg_tenure = df["Years at Company"].mean()
+def _check_data():
+    """Call this at the top of every page to guard against missing data."""
+    if df is None:
+        st.error("❌ Data file not found — ensure final_dataset.csv is in the repo")
+        st.stop()
+
+# Pre-compute summary stats (safe — pure pandas, no st.*)
+if df is not None:
+    total      = len(df)
+    left       = (df["Attrition"]=="Left").sum()
+    stayed     = total - left
+    rate       = left/total*100
+    avg_tenure = df["Years at Company"].mean()
+else:
+    total = left = stayed = rate = avg_tenure = 0
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  RENDER HELPERS
@@ -1181,6 +1188,7 @@ avg_tenure = df["Years at Company"].mean()
 # ══════════════════════════════════════════════════════════════════════════════
 def render_sidebar_brand():
     inject_css()
+    _check_data()
     with st.sidebar:
         st.markdown(f"""
         <div class="kayfa-sidebar-logo">
@@ -1489,17 +1497,40 @@ def render_solution():
     """), unsafe_allow_html=True)
 
 # ══════════════════════════════════════════════════════════════════════════════
-#  NAVIGATION — st.navigation / st.Page (native Streamlit multipage nav)
+#  NAVIGATION — version-safe: st.navigation (≥1.36) or st.radio fallback
 # ══════════════════════════════════════════════════════════════════════════════
-_pages = [st.Page(render_home,     title="Home",     icon="🏠", default=True)]
-for _k, _v in QUESTIONS.items():
-    _q_key = _k   # capture loop var
-    _pages.append(
-        st.Page(lambda _key=_q_key: render_question_page(_key),
-                title=f"{_k} – {_v['title']}",
-                icon="📊")
-    )
-_pages.append(st.Page(render_solution, title="Solution", icon="🚀"))
+import streamlit as _st_version_check
+_ST_VER = tuple(int(x) for x in _st_version_check.__version__.split(".")[:2])
+_HAS_NAV = _ST_VER >= (1, 36)
 
-pg = st.navigation(_pages, position="sidebar", expanded=True)
-pg.run()
+if _HAS_NAV:
+    _pages = [st.Page(render_home, title="Home", icon="🏠", default=True)]
+    for _k, _v in QUESTIONS.items():
+        _q_key = _k
+        _pages.append(
+            st.Page(lambda _key=_q_key: render_question_page(_key),
+                    title=f"{_k} – {_v['title']}",
+                    icon="📊")
+        )
+    _pages.append(st.Page(render_solution, title="Solution", icon="🚀"))
+    pg = st.navigation(_pages, position="sidebar", expanded=True)
+    pg.run()
+else:
+    # ── Fallback: native st.radio sidebar nav (works on all Streamlit versions) ──
+    render_sidebar_brand()
+    with st.sidebar:
+        st.markdown('<div class="sidebar-section-title">📋 Analysis Questions</div>',
+                    unsafe_allow_html=True)
+        _nav_options = ["🏠 Home"] + [f"{k} – {v['title']}" for k, v in QUESTIONS.items()] + ["🚀 Solution"]
+        _selected = st.radio("Navigation", _nav_options, label_visibility="collapsed", index=0)
+
+    if _selected == "🏠 Home":
+        render_home()
+    elif _selected == "🚀 Solution":
+        render_solution()
+    else:
+        _q_key = _selected.split(" – ")[0]
+        if _q_key in QUESTIONS:
+            render_question_page(_q_key)
+        else:
+            render_home()
